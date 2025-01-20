@@ -1,7 +1,8 @@
 import socketio  # type: ignore
 import base64
 import json
-from sound_util import greet_user
+from sound_util import speak
+from choose_form import run_main  # Import form hoặc giao diện tương ứng
 
 # Socket.IO client for Citizen Card Service
 card_service_socket = socketio.Client()
@@ -35,25 +36,19 @@ def handle_card_event(data):
     if event_id == 1:  # Sự kiện có thẻ quét
         print("New card detected.")
     elif event_id == 2:  # Đọc thẻ thành công (dữ liệu text)
-        # print("Card read successfully!")
         card_data = data.get("data", {})
-        # print(json.dumps(card_data, indent=4, ensure_ascii=False))
-        success = save_to_file("card_data.json", card_data)
+        success = save_to_file("temp/card_data.json", card_data)
         if success:
-            # print("Card data saved successfully.")
             name = card_data.get("personName")
-            greet_user(name)
+            greeting_message = f"Xin chào, {name}! Mời bạn chọn dịch vụ!"
+            speak(greeting_message)
+            run_main()
         else:
             print("Failed to save card data.")
     elif event_id == 4:  # Đọc thẻ thành công (dữ liệu ảnh)
-        # print("Card image received.")
         img_data = data["data"].get("img_data")
         if img_data:
-            success = save_to_file("card_image.jpg", img_data, is_binary=True)
-            # if success:
-            #     print("Card image saved successfully.")
-            # else:
-            #     print("Failed to save card image.")
+            success = save_to_file("temp/card_image.jpg", img_data, is_binary=True)
     elif event_id == 3:  # Đọc thẻ thất bại
         print("Failed to read card:", data.get("message"))
     else:
@@ -61,9 +56,7 @@ def handle_card_event(data):
 
 # Connect to Citizen Card Service
 try:
-    # print("Connecting to Citizen Card Service...")
     card_service_socket.connect("http://192.168.5.1:8000")
-    # print("Waiting for events. Press Ctrl+C to exit.")
     card_service_socket.wait()
 except KeyboardInterrupt:
     print("Exiting...")
